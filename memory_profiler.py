@@ -109,10 +109,11 @@ def _get_child_memory(process, meminfo_attr=None):
     # Loop over the child processes and yield their memory
     try:
         for child in getattr(process, children_attr)(recursive=True):
-            yield getattr(child, meminfo_attr)()[0] / _TWO_20
+            name = "{}-{}".format("-".join(child.cmdline()), child.pid).replace(" ", "-")
+            yield (name, getattr(child, meminfo_attr)()[0] / _TWO_20)
     except (psutil.NoSuchProcess, psutil.AccessDenied):
         # https://github.com/fabianp/memory_profiler/issues/71
-        yield 0.0
+        yield ("", 0.0)
 
 
 def _get_memory(pid, backend, timestamps=False, include_children=False, filename=None):
@@ -366,8 +367,8 @@ def memory_usage(proc=-1, interval=.1, timeout=None, timestamps=False,
 
                     # Write children to the stream file
                     if multiprocess:
-                        for idx, chldmem in enumerate(_get_child_memory(proc.pid)):
-                            stream.write("CHLD {0} {1:.6f} {2:.4f}\n".format(idx, chldmem, time.time()))
+                        for idx, (chldname, chldmem) in enumerate(_get_child_memory(proc.pid)):
+                            stream.write("CHLD {0} {1:.6f} {2:.4f}\n".format(chldname, chldmem, time.time()))
                 else:
                     # Create a nested list with the child memory
                     if multiprocess:
