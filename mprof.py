@@ -417,7 +417,10 @@ def plot_file(filename, index=0, timestamps=True, children=True, options=None):
     if len(chld) > 0 and children:
         cmpoint = (0,0) # maximal child memory
 
-        for idx, (proc, data) in enumerate(chld.items()):
+        def _filter(item):
+            return True if re.search(options.pattern, item[0]) else False
+
+        for idx, (proc, data) in enumerate(filter(_filter, chld.items())):
             # Create the numpy arrays from the series data
             cts  = np.asarray([item[1] for item in data]) - global_start
             cmem = np.asarray([item[0] for item in data])
@@ -714,6 +717,7 @@ such file in the current directory."""
                       help="Specify the Matplotlib backend to use")
     parser.add_argument("profiles", nargs="*",
                         help="profiles made by mprof run")
+    parser.add_argument("--pattern", action="store", help="Filter children with regex.", default=".+")
     args = parser.parse_args()
 
     try:
